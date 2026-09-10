@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fff7e3;
+  --foreground: #2f3b4a;
+  --card: #ffffff;
+  --border: #e8dcb8;
+  --muted: #7c8ba0;
+  --accent: #779bbd;
+  --accent-2: #5b84a8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1b2430;
+    --foreground: #fff7e3;
+    --card: #232e3c;
+    --border: #35414f;
+    --muted: #97a5b6;
+    --accent: #8fb3d4;
+    --accent-2: #6c93b8;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.4s ease-out both;
+}
+
+.prose-course {
+  line-height: 1.75;
+}
+
+.prose-course > *:first-child {
+  margin-top: 0;
+}
+
+.prose-course h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.prose-course h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+}
+
+.prose-course h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-course p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-course ul,
+.prose-course ol {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.prose-course ul {
+  list-style-type: disc;
+}
+
+.prose-course ol {
+  list-style-type: decimal;
+}
+
+.prose-course li {
+  margin-top: 0.25rem;
+}
+
+.prose-course a {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent-2) 40%, transparent);
+}
+
+.prose-course code {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.875em;
+  font-family: var(--font-mono), monospace;
+}
+
+.prose-course pre {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.prose-course pre code {
+  background: none;
+  padding: 0;
+}
+
+.prose-course blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--muted);
+  margin: 1rem 0;
+}
+
+.prose-course hr {
+  border-color: var(--border);
+  margin: 2rem 0;
+}
+
+.prose-course table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.prose-course th,
+.prose-course td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose-course th {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
