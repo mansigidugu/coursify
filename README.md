@@ -1,83 +1,109 @@
-# course-creation-agent (Distributed)
+# Coursify
 
-A multi-agent system built with Google's Agent Development Kit (ADK) and Agent-to-Agent (A2A) protocol. It features a team of microservice agents that research, judge, and build content, orchestrated to deliver high-quality results.
+Turn any topic into a complete, fact-checked course. A team of Claude-powered
+agents researches the subject, checks the research for quality, and writes it
+up as a structured course — no prompt engineering required, just type a topic.
 
-## Architecture
+**Live app:** [coursify](https://web-delta-nine-56.vercel.app)
 
-This project uses a distributed microservices architecture where each agent runs in its own container and communicates via A2A:
+## How it works
 
-*   **Orchestrator Service (`orchestrator`):** The main entry point. It manages the workflow using `LoopAgent` and `SequentialAgent`, and connects to other agents using `RemoteA2aAgent`.
-*   **Researcher Service (`researcher`):** A standalone agent that gathers information using Google Search.
-*   **Judge Service (`judge`):** A standalone agent that evaluates research quality.
-*   **Content Builder Service (`content_builder`):** A standalone agent that compiles the final course.
-*   **Agent App (`app`):** A web application that queries the Orchestrator agent, displays progress and results.
-
-## Project Structure
+Every request runs through a small multi-agent pipeline:
 
 ```
-course-creation-agent/
-├── agents/
-    ├── orchestrator/        # Main Orchestrator agent, ADK API Service
-    ├── researcher/          # Researcher agent, A2A microservice
-    ├── judge/               # Judge agent, A2A microservice
-    └── content_builder/     # Content Builder agent, A2A microservice
-├── app/                     # Web App service application
-    └── frontend/            # Frontend application
-├── shared/                  # Files used by all agents
-└── ...
+topic ──▶ Researcher ──▶ Judge ──▶ Content Builder ──▶ course
+              ▲             │
+              └── feedback ─┘   (loops up to 3x until research passes review)
 ```
 
-### Shared files
+1. **Researcher** — turns the topic into a search query, pulls the most
+   relevant Wikipedia articles, and asks Claude to synthesize them into a set
+   of findings.
+2. **Judge** — reviews those findings for accuracy, coverage, and quality. If
+   they fall short, it sends specific feedback back to the Researcher for
+   another pass (up to 3 attempts).
+3. **Content Builder** — once research passes review, writes the findings up
+   as a complete, well-organized course.
 
-There are some files in `shared` directory that are shared across all agents and the web app.
-To avoid duplication, these files are linked into respective subdirectories as [**symlinks**](https://en.wikipedia.org/wiki/Symbolic_link).
+Progress streams back to the browser in real time so you can watch each agent
+work.
 
-* `a2a_utils.py` - contains code for rewriting agent URLs in A2A AgentCard when deployed in Cloud Run.
-* `adk_app.py` - ADK API Service implementation with additional A2A functionality.
-* `authenticated_httpx.py` - [httpx](https://www.python-httpx.org/) client extension for [service-to-service requests](https://docs.cloud.google.com/run/docs/authenticating/service-to-service).
+## Project structure
 
-## Requirements
+This repo contains two implementations of the same idea:
 
-*   **uv**: Python package manager (required for local development).
-*   **Google Cloud SDK**: For GCP services and authentication.
+```
+.
+├── web/            # Primary app — Next.js + Vercel AI SDK (deployed to Vercel)
+│   ├── app/             # Routes, streaming API endpoint, global styles
+│   ├── components/      # Chat UI, sidebar, progress steps, course renderer
+│   └── lib/
+│       ├── agents/      # Researcher, Judge, Content Builder (Claude + Wikipedia)
+│       ├── orchestrator.ts  # Runs the research → judge → build loop
+│       └── history.ts   # Client-side course history (localStorage)
+│
+├── agents/          # Distributed microservices version — Google ADK + A2A protocol
+│   ├── orchestrator/    # Main entry point (LoopAgent + SequentialAgent)
+│   ├── researcher/      # Standalone agent, Google Search-backed
+│   ├── judge/            # Standalone agent, evaluates research quality
+│   └── content_builder/ # Standalone agent, compiles the final course
+├── app/              # Web app service that talks to the Orchestrator agent
+└── shared/           # Code shared across the ADK agents (symlinked in)
+```
 
-## Quick Start
+`web/` is the actively developed, deployed version — a single Next.js app
+using the [Vercel AI SDK](https://sdk.vercel.ai) and Wikipedia's public API
+directly, with no separate backend services to run. `agents/` is an
+alternate, distributed implementation built on Google's [Agent Development
+Kit](https://google.github.io/adk-docs/) (ADK) with each agent deployed as
+its own Cloud Run service.
 
-1.  **Install Dependencies:**
-    ```bash
-    uv sync
-    ```
+## Quick start (web app)
 
-2.  **Set up credentials:**
-    Ensure you have Google Cloud credentials available. You might need to run:
-    ```bash
-    gcloud auth application-default login
-    ```
-    And ensure your `GOOGLE_CLOUD_PROJECT` environment variable is set.
+Requirements: Node.js 20+, an [Anthropic API key](https://console.anthropic.com/).
 
-3.  **Run Locally:**
-    ```bash
-    ./run_local.sh
-    ```
-    This will start all 4 agents and the web app in background processes
+```bash
+cd web
+npm install
+cp .env.local.example .env.local   # add your ANTHROPIC_API_KEY
+npm run dev
+```
 
-4.  **Access the App:**
-    Open **http://localhost:8000** in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Deployment
+### Deploy
 
-To deploy to Google Cloud Run, you need to deploy each service individually and then configure the Orchestrator with the URLs of the other services.
+The app is set up for [Vercel](https://vercel.com):
 
-1.  **Deploy Researcher, Judge, Content Builder, and Orchestrator:**
-    Deploy each of these folders as a separate Cloud Run service. Note down their URLs (e.g., `https://researcher-xyz.a.run.app`).
+```bash
+cd web
+vercel        # preview deployment
+vercel --prod # promote to production
+```
 
-2.  **Deploy Agent App:**
-    Deploy the `app/` folder to Cloud Run.
-    Set the following environment variables on the Agent App service:
-    *   `RESEARCHER_AGENT_CARD_URL`: `https://<researcher-url>/a2a/agent/.well-known/agent.json`
-    *   `JUDGE_AGENT_CARD_URL`: `https://<judge-url>/a2a/agent/.well-known/agent.json`
-    *   `CONTENT_BUILDER_AGENT_CARD_URL`: `https://<content-builder-url>/a2a/agent/.well-known/agent.json`
-    *   `AGENT_URL`: `https://<orchestrator-url>`
+Set `ANTHROPIC_API_KEY` (and optionally `CLAUDE_MODEL`) in the Vercel
+project's environment variables.
 
-3.  **Access:**
-    Open the App's URL in your browser.
+## Quick start (ADK microservices)
+
+Requirements: [`uv`](https://docs.astral.sh/uv/), Google Cloud SDK, and
+credentials for Vertex AI.
+
+```bash
+uv sync
+gcloud auth application-default login   # ensure GOOGLE_CLOUD_PROJECT is set
+./run_local.sh                          # starts all 4 agents + web app
+```
+
+Open [http://localhost:8000](http://localhost:8000).
+
+See the agent-by-agent Cloud Run deployment steps in
+[`agents/`](./agents) — each service deploys independently, then the
+Orchestrator is configured with the other services' URLs.
+
+## Tech stack
+
+- **Frontend:** Next.js (App Router), React, Tailwind CSS
+- **AI:** [Vercel AI SDK](https://sdk.vercel.ai) with Claude (Anthropic)
+- **Research source:** Wikipedia public API
+- **Alternate backend:** Google Agent Development Kit (ADK), Agent-to-Agent (A2A) protocol, Cloud Run
