@@ -6,7 +6,7 @@ export type PipelineEvent = {
 export async function* runPipeline(topic: string): AsyncGenerator<PipelineEvent> {
   yield { type: "progress", text: "Researching topic via Wikipedia..." };
 
-  const researcherUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*";
+  const researcherUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*`;
   const researcherRes = await fetch(researcherUrl);
   if (!researcherRes.ok) {
     throw new Error("Failed to search Wikipedia");
